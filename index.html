@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Protein Tier List — Tyron's OCB Prep</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #07070a; color: #e0e0e0; font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulseOutline { 0%,100%{outline-color:rgba(255,149,0,0.6)} 50%{outline-color:rgba(255,149,0,1)} }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 24px 16px; position: relative; }
+
+  .orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+  .orb-1 { top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(255,45,85,0.06) 0%, transparent 70%); }
+  .orb-2 { bottom: -150px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(90,200,250,0.04) 0%, transparent 70%); }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 32px; }
+  .header-sub { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #444; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 8px; }
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 52px; letter-spacing: 6px; line-height: 1;
+    background: linear-gradient(135deg, #ff2d55, #ff9500, #ffcc00, #ff2d55);
+    background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    animation: shimmer 4s linear infinite;
+  }
+  .stats-row { font-size: 13px; color: #444; font-family: 'JetBrains Mono', monospace; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .progress-wrap { margin: 16px auto 0; max-width: 280px; height: 4px; border-radius: 2px; background: #151518; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #ff2d55, #ff9500, #ffcc00); transition: width 0.6s cubic-bezier(.4,0,.2,1); box-shadow: 0 0 12px rgba(255,45,85,0.4); }
+  .progress-label { font-size: 10px; color: #333; font-family: monospace; margin-top: 6px; text-align: center; }
+
+  /* Selection banner */
+  .select-banner {
+    position: sticky; top: 0; z-index: 300; padding: 10px 16px;
+    background: rgba(7,7,10,0.9); backdrop-filter: blur(20px);
+    border-bottom: 1px solid #ff950044; display: flex; align-items: center; justify-content: center; gap: 12px;
+    animation: fadeIn 0.2s ease;
+  }
+  .select-banner span { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: #ff9500; font-weight: 600; }
+  .select-banner .hint { color: #666; font-size: 11px; font-weight: 400; }
+  .select-banner button { background: #ff2d5533; border: 1px solid #ff2d5555; color: #ff6680; padding: 4px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+
+  /* Controls */
+  .controls { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
+  .ctrl-select { background: #111114; border: 1px solid #222228; color: #777; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; outline: none; -webkit-appearance: none; }
+  .ctrl-btn { background: #111114; border: 1px solid #222228; color: #777; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; outline: none; }
+  .ctrl-btn:hover { border-color: #333; color: #aaa; }
+  .ctrl-btn.active { background: linear-gradient(135deg, #ff2d55, #ff4466); border-color: #ff2d55; color: #fff; box-shadow: 0 4px 16px rgba(255,45,85,0.3); font-weight: 700; }
+
+  /* Add Form */
+  .add-form { background: linear-gradient(135deg, #0e0e14, #131318); border: 1px solid #222228; border-radius: 16px; padding: 18px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: fadeIn 0.2s ease; }
+  .add-form input, .add-form select { background: #0a0a0e; border: 1px solid #222228; color: #e0e0e0; padding: 12px 14px; border-radius: 10px; font-size: 14px; font-family: Inter, sans-serif; outline: none; transition: border-color 0.2s; width: 100%; }
+  .add-form input:focus { border-color: #ff2d55; }
+  .add-form select { color: #777; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+  /* Tier Row */
+  .tier-row {
+    display: flex; margin-bottom: 8px; min-height: 68px; border-radius: 14px;
+    overflow: visible; border: 1px solid #151518; transition: all 0.25s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .tier-row.highlight {
+    border-color: var(--tc); box-shadow: 0 0 30px var(--tg);
+    transform: scale(1.008);
+  }
+  .tier-label {
+    width: 64px; min-width: 64px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s; border-radius: 14px 0 0 14px;
+  }
+  .tier-label:hover { filter: brightness(1.3); }
+  .tier-letter { font-family: 'Bebas Neue', sans-serif; font-size: 32px; line-height: 1; }
+  .tier-desc { font-size: 7px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+  .tier-cards {
+    flex: 1; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px;
+    align-items: center; min-height: 48px; transition: background 0.2s;
+  }
+  .tier-empty { color: #222; font-size: 11px; font-style: italic; font-family: monospace; pointer-events: none; }
+
+  /* Flavor Card */
+  .flavor-card {
+    border-radius: 12px; padding: 8px 12px; cursor: grab; transition: all 0.15s cubic-bezier(.4,0,.2,1);
+    position: relative; touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .flavor-card:hover { transform: translateY(-2px); filter: brightness(1.1); }
+  .flavor-card.selected {
+    outline: 2px solid #ff9500; outline-offset: 2px;
+    animation: pulseOutline 1.5s ease infinite;
+  }
+  .flavor-card.dragging { opacity: 0.25; transform: scale(0.95); }
+  .flavor-card .brand-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .flavor-card .brand-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .flavor-card .brand-name { font-size: 9px; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.9; }
+  .flavor-card .flavor-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .flavor-card .note { font-size: 10px; color: #555; font-style: italic; margin-top: 3px; line-height: 1.3; }
+
+  /* Ghost card that follows cursor during drag */
+  .drag-ghost {
+    position: fixed; z-index: 1000; pointer-events: none;
+    border-radius: 12px; padding: 8px 12px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 2px #ff9500;
+    transform: translate(-50%, -50%) rotate(2deg) scale(1.05);
+    opacity: 0.95;
+  }
+  .drag-ghost .brand-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+  .drag-ghost .brand-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .drag-ghost .brand-name { font-size: 9px; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.9; }
+  .drag-ghost .flavor-name { font-size: 13px; color: #eee; font-weight: 600; line-height: 1.3; }
+
+  /* Unranked */
+  .unranked-section { margin-top: 28px; border-radius: 14px; overflow: visible; border: 1px solid #151518; transition: all 0.25s; position: relative; }
+  .unranked-section.highlight { border-color: #666; box-shadow: 0 0 20px rgba(255,255,255,0.08); transform: scale(1.008); }
+  .unranked-header { padding: 12px 16px; background: linear-gradient(90deg, #0e0e12, #111116); border-bottom: 1px solid #1a1a1e; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: background 0.2s; }
+  .unranked-header:hover { background: linear-gradient(90deg, #121218, #16161c); }
+  .unranked-body { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; background: #0a0a0e; min-height: 56px; }
+
+  /* Context menu */
+  .ctx-menu { position: fixed; z-index: 500; background: linear-gradient(135deg, #141418, #1c1c22); border: 1px solid #2a2a33; border-radius: 14px; padding: 8px; min-width: 180px; box-shadow: 0 16px 48px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04); animation: fadeIn 0.15s ease; }
+  .ctx-menu .ctx-label { font-size: 9px; color: #555; margin: 2px 8px 6px; font-family: monospace; text-transform: uppercase; letter-spacing: 1px; }
+  .ctx-menu button { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border: 1px solid transparent; padding: 7px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-family: 'JetBrains Mono', monospace; text-align: left; margin-bottom: 1px; transition: all 0.1s; color: inherit; }
+  .ctx-menu button:hover { background: rgba(255,255,255,0.06); }
+  .ctx-menu button.current { background: var(--cur-bg); border-color: var(--cur-border); }
+  .ctx-menu .sep { height: 1px; background: #2a2a33; margin: 4px 0; }
+  .ctx-menu .delete-btn { color: #ff453a; }
+  .ctx-menu .delete-btn:hover { background: rgba(255,69,58,0.1); }
+
+  .footer { text-align: center; margin-top: 32px; padding: 16px 0; border-top: 1px solid #151518; }
+  .footer p { font-family: 'JetBrains Mono', monospace; margin: 0; }
+  .footer .f1 { color: #333; font-size: 10px; letter-spacing: 1px; }
+  .footer .f2 { color: #1a1a20; font-size: 9px; margin-top: 4px; }
+
+  /* View toggle */
+  .view-toggle { display: flex; background: #111114; border-radius: 10px; border: 1px solid #222228; overflow: hidden; }
+  .view-toggle button { background: transparent; border: none; color: #555; padding: 8px 14px; cursor: pointer; font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; transition: all 0.2s; }
+  .view-toggle button.active { background: #1a1a22; color: #ddd; }
+
+  /* Grid View */
+  .grid-view { display: flex; flex-direction: column; gap: 20px; }
+  .brand-group { border-radius: 14px; overflow: hidden; }
+  .brand-group-header { padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .brand-group-body { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
+  .grid-card { background: #111116; border: 1px solid #1e1e24; border-radius: 10px; padding: 8px 12px; cursor: pointer; position: relative; transition: all 0.2s; }
+  .grid-card:hover { border-color: #2a2a33; transform: translateY(-1px); }
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="container" id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const TIERS = [
+  { id:"s", label:"S", color:"#ff2d55", glow:"rgba(255,45,85,0.4)", desc:"GOD TIER", emoji:"\u{1F451}" },
+  { id:"a", label:"A", color:"#ff9500", glow:"rgba(255,149,0,0.35)", desc:"ELITE", emoji:"\u{1F525}" },
+  { id:"b", label:"B", color:"#ffcc00", glow:"rgba(255,204,0,0.3)", desc:"SOLID", emoji:"\u{1F4AA}" },
+  { id:"c", label:"C", color:"#34c759", glow:"rgba(52,199,89,0.3)", desc:"MID", emoji:"\u{1F937}" },
+  { id:"d", label:"D", color:"#5ac8fa", glow:"rgba(90,200,250,0.3)", desc:"NAH", emoji:"\u{1F610}" },
+  { id:"f", label:"F", color:"#af52de", glow:"rgba(175,82,222,0.3)", desc:"TRASH", emoji:"\u{1F5D1}\uFE0F" },
+];
+const UID = "unranked";
+const ALL_TIERS = [...TIERS, {id:UID}];
+
+const DEFAULT = [
+  { id:"1", brand:"Ryse", flavor:"Skippy Peanut Butter", tier:"s", note:"The GOAT. Nothing comes close." },
+  { id:"2", brand:"MuscleSport", flavor:"White Choc Peanut Butter", tier:"s", note:"Dangerously good in oats" },
+  { id:"3", brand:"Ryse", flavor:"Cinnamon Toast", tier:"a", note:"" },
+  { id:"4", brand:"MuscleSport", flavor:"Dippsadoodles", tier:"a", note:"" },
+  { id:"5", brand:"MuscleSport", flavor:"Fluffernutter", tier:UID, note:"" },
+  { id:"6", brand:"MuscleSport", flavor:"Salted Caramel", tier:UID, note:"" },
+  { id:"7", brand:"MuscleSport", flavor:"Cookies N Cream", tier:UID, note:"" },
+  { id:"8", brand:"Ghost", flavor:"Nutter Butter", tier:UID, note:"" },
+  { id:"9", brand:"Ghost", flavor:"Chips Ahoy!", tier:UID, note:"" },
+  { id:"10", brand:"Ghost", flavor:"Cinnabon", tier:UID, note:"" },
+  { id:"11", brand:"Ryse", flavor:"Cosmic Brownie", tier:UID, note:"" },
+  { id:"12", brand:"PEScience", flavor:"Snickerdoodle", tier:UID, note:"" },
+  { id:"13", brand:"PEScience", flavor:"Cake Pop", tier:UID, note:"" },
+  { id:"14", brand:"PEScience", flavor:"White Choc Macadamia", tier:UID, note:"" },
+  { id:"15", brand:"Raw/CBUM", flavor:"Birthday Cake", tier:UID, note:"" },
+  { id:"16", brand:"Raw/CBUM", flavor:"Waffle & Maple Syrup", tier:UID, note:"" },
+  { id:"17", brand:"Raw/CBUM", flavor:"Mint Chip Ice Cream", tier:UID, note:"" },
+  { id:"18", brand:"Dymatize", flavor:"Fruity Pebbles", tier:UID, note:"" },
+  { id:"19", brand:"Dymatize", flavor:"Birthday Cake", tier:UID, note:"" },
+  { id:"20", brand:"Dymatize", flavor:"Fudge Brownie", tier:UID, note:"" },
+  { id:"21", brand:"MuscleSport", flavor:"Protella", tier:"d", note:"" },
+];
+
+const BC = {
+  MuscleSport:{accent:"#e94560",bg:"linear-gradient(135deg,#1a0a12,#1a1a2e)"},
+  Ryse:{accent:"#00d4ff",bg:"linear-gradient(135deg,#0a1a1f,#0f0f1a)"},
+  Ghost:{accent:"#c8ff00",bg:"linear-gradient(135deg,#141a0a,#1c1c1c)"},
+  PEScience:{accent:"#ff7eb3",bg:"linear-gradient(135deg,#1a0a14,#1a1a2e)"},
+  "Raw/CBUM":{accent:"#f0883e",bg:"linear-gradient(135deg,#1a120a,#0d1117)"},
+  Dymatize:{accent:"#60a5fa",bg:"linear-gradient(135deg,#0a0f1a,#111827)"},
+};
+const gbs = b => BC[b] || {accent:"#888",bg:"linear-gradient(135deg,#161616,#1a1a1a)"};
+const LS_KEY = "protein-tier-list-v4";
+
+function App() {
+  const [flavors, setFlavors] = useState(() => {
+    try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : DEFAULT; } catch { return DEFAULT; }
+  });
+  const [showAdd, setShowAdd] = useState(false);
+  const [newBrand, setNewBrand] = useState("");
+  const [newFlavor, setNewFlavor] = useState("");
+  const [newTier, setNewTier] = useState(UID);
+  const [filterBrand, setFilterBrand] = useState("All");
+  const [selectedId, setSelectedId] = useState(null);
+  const [ctxMenu, setCtxMenu] = useState(null);
+  const [view, setView] = useState("tiers");
+
+  // Drag state (custom pointer-based)
+  const [dragId, setDragId] = useState(null);
+  const [dragPos, setDragPos] = useState({x:0, y:0});
+  const [hoveredTier, setHoveredTier] = useState(null);
+  const dragStarted = useRef(false);
+  const dragStartPos = useRef({x:0,y:0});
+  const tierRefs = useRef({});
+
+  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(flavors)); } catch {} }, [flavors]);
+
+  useEffect(() => {
+    if (ctxMenu) { const h = () => setCtxMenu(null); document.addEventListener("click", h); return () => document.removeEventListener("click", h); }
+  }, [ctxMenu]);
+
+  // Pointer move & up handlers for drag
+  useEffect(() => {
+    if (!dragId) return;
+
+    const onMove = (e) => {
+      const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+      const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
+
+      // Only start visual drag after 5px movement
+      if (!dragStarted.current) {
+        const dx = cx - dragStartPos.current.x;
+        const dy = cy - dragStartPos.current.y;
+        if (Math.sqrt(dx*dx+dy*dy) < 5) return;
+        dragStarted.current = true;
+      }
+
+      setDragPos({x: cx, y: cy});
+
+      // Hit-test tier rows
+      let found = null;
+      for (const [tid, el] of Object.entries(tierRefs.current)) {
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (cy >= r.top && cy <= r.bottom && cx >= r.left && cx <= r.right) {
+          found = tid; break;
+        }
+      }
+      setHoveredTier(found);
+    };
+
+    const onUp = (e) => {
+      if (dragStarted.current && hoveredTier != null) {
+        // Drop!
+        setFlavors(p => p.map(f => f.id === dragId ? {...f, tier: hoveredTier} : f));
+      }
+      setDragId(null);
+      setHoveredTier(null);
+      dragStarted.current = false;
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [dragId, hoveredTier]);
+
+  const brands = [...new Set(flavors.map(f=>f.brand))].sort();
+  const filtered = filterBrand==="All" ? flavors : flavors.filter(f=>f.brand===filterBrand);
+  const getTF = tid => filtered.filter(f=>f.tier===tid);
+  const ranked = flavors.filter(f=>f.tier!==UID).length;
+  const total = flavors.length;
+  const pct = total ? Math.round((ranked/total)*100) : 0;
+  const selectedFlavor = selectedId ? flavors.find(f=>f.id===selectedId) : null;
+  const dragFlavor = dragId ? flavors.find(f=>f.id===dragId) : null;
+
+  const add = () => { if(!newBrand.trim()||!newFlavor.trim()) return; setFlavors(p=>[...p,{id:Date.now()+"",brand:newBrand.trim(),flavor:newFlavor.trim(),tier:newTier,note:""}]); setNewBrand(""); setNewFlavor(""); setNewTier(UID); setShowAdd(false); };
+  const remove = id => { setFlavors(p=>p.filter(f=>f.id!==id)); setSelectedId(null); setCtxMenu(null); };
+  const move = (id,t) => { setFlavors(p=>p.map(f=>f.id===id?{...f,tier:t}:f)); setSelectedId(null); setCtxMenu(null); };
+  const reset = () => { if(confirm("Reset everything to defaults?")) { setFlavors(DEFAULT); setSelectedId(null); } };
+
+  const onPointerDown = (e, id) => {
+    // Ignore right-click
+    if (e.button === 2) return;
+    e.preventDefault();
+    setCtxMenu(null);
+    const cx = e.clientX;
+    const cy = e.clientY;
+    dragStartPos.current = {x: cx, y: cy};
+    dragStarted.current = false;
+    setDragId(id);
+    setDragPos({x: cx, y: cy});
+  };
+
+  const onCardClick = (e, id) => {
+    // Only handle click if we didn't drag
+    if (dragStarted.current) return;
+    e.stopPropagation();
+    setSelectedId(selectedId === id ? null : id);
+  };
+
+  const onCardRightClick = (e, id) => {
+    e.preventDefault(); e.stopPropagation();
+    setCtxMenu({id, x: e.clientX, y: e.clientY});
+    setSelectedId(null);
+  };
+
+  const onTierClick = (tierId) => {
+    if (selectedId) move(selectedId, tierId);
+  };
+
+  const onBgClick = () => { if(!dragStarted.current) setSelectedId(null); };
+
+  const ready = newBrand.trim() && newFlavor.trim();
+  const isDragging = dragId && dragStarted.current;
+
+  const Card = ({f, dashed}) => {
+    const bs = gbs(f.brand);
+    const isSel = selectedId === f.id;
+    const isDrag = dragId === f.id && dragStarted.current;
+    return (
+      <div
+        className={`flavor-card${isSel?" selected":""}${isDrag?" dragging":""}`}
+        onPointerDown={e => onPointerDown(e, f.id)}
+        onClick={e => onCardClick(e, f.id)}
+        onContextMenu={e => onCardRightClick(e, f.id)}
+        style={{
+          background: bs.bg,
+          border: `1px ${dashed?"dashed":"solid"} ${bs.accent}${dashed?"44":"33"}`,
+        }}
+      >
+        <div className="brand-row">
+          <div className="brand-dot" style={{background:bs.accent, boxShadow:`0 0 8px ${bs.accent}`}}/>
+          <span className="brand-name" style={{color:bs.accent}}>{f.brand}</span>
+        </div>
+        <div className="flavor-name" style={{color: dashed?"#777":"#eee"}}>{f.flavor}</div>
+        {f.note && <div className="note">{f.note}</div>}
+      </div>
+    );
+  };
+
+  return (<div onClick={onBgClick}>
+    {/* Selection banner */}
+    {selectedId && selectedFlavor && !isDragging && (
+      <div className="select-banner">
+        <span>{selectedFlavor.flavor}</span>
+        <span className="hint">Drag or click a tier</span>
+        <button onClick={e=>{e.stopPropagation();setSelectedId(null);}}>Cancel</button>
+      </div>
+    )}
+
+    {/* Drag ghost */}
+    {isDragging && dragFlavor && (() => {
+      const bs = gbs(dragFlavor.brand);
+      return (
+        <div className="drag-ghost" style={{left:dragPos.x, top:dragPos.y, background:bs.bg}}>
+          <div className="brand-row">
+            <div className="brand-dot" style={{background:bs.accent, boxShadow:`0 0 8px ${bs.accent}`}}/>
+            <span className="brand-name" style={{color:bs.accent}}>{dragFlavor.brand}</span>
+          </div>
+          <div className="flavor-name">{dragFlavor.flavor}</div>
+        </div>
+      );
+    })()}
+
+    <div className="header">
+      <div className="header-sub">Tyron's</div>
+      <h1>PROTEIN TIER LIST</h1>
+      <div className="stats-row">
+        <span>{ranked} ranked</span><span style={{color:"#222"}}>&middot;</span>
+        <span>{total-ranked} to try</span><span style={{color:"#222"}}>&middot;</span>
+        <span>{total} total</span>
+      </div>
+      <div className="progress-wrap"><div className="progress-bar" style={{width:pct+"%"}}/></div>
+      <div className="progress-label">{pct}% ranked</div>
+    </div>
+
+    <div className="controls">
+      <select className="ctrl-select" value={filterBrand} onChange={e=>setFilterBrand(e.target.value)}>
+        <option value="All">All Brands</option>
+        {brands.map(b=><option key={b} value={b}>{b}</option>)}
+      </select>
+      <div className="view-toggle">
+        <button className={view==="tiers"?"active":""} onClick={e=>{e.stopPropagation();setView("tiers");}}>Tiers</button>
+        <button className={view==="grid"?"active":""} onClick={e=>{e.stopPropagation();setView("grid");}}>Grid</button>
+      </div>
+      <button className={`ctrl-btn${showAdd?" active":""}`} onClick={e=>{e.stopPropagation();setShowAdd(!showAdd);}}>{showAdd?"✕ Cancel":"+ Add Flavor"}</button>
+      <button className="ctrl-btn" onClick={e=>{e.stopPropagation();reset();}}>Reset</button>
+    </div>
+
+    {showAdd && (
+      <div className="add-form" onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <input placeholder="Brand (e.g. Ghost)" value={newBrand} onChange={e=>setNewBrand(e.target.value)}/>
+          <input placeholder="Flavor (e.g. Nutter Butter)" value={newFlavor} onChange={e=>setNewFlavor(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&ready)add();}}/>
+          <div style={{display:"flex",gap:8}}>
+            <select style={{flex:1}} value={newTier} onChange={e=>setNewTier(e.target.value)}>
+              <option value={UID}>Unranked</option>
+              {TIERS.map(t=><option key={t.id} value={t.id}>{t.emoji} {t.label} - {t.desc}</option>)}
+            </select>
+            <button onClick={add} disabled={!ready} style={{
+              background:ready?"linear-gradient(135deg,#ff2d55,#ff4466)":"#1a1a1e",
+              border:"none",color:ready?"#fff":"#444",padding:"12px 24px",borderRadius:10,
+              cursor:ready?"pointer":"not-allowed",fontSize:13,fontWeight:800,
+              fontFamily:"'JetBrains Mono',monospace",
+              boxShadow:ready?"0 4px 16px rgba(255,45,85,0.3)":"none",transition:"all 0.2s",
+            }}>ADD</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {view === "tiers" ? (<>
+    {/* Tier Rows */}
+    {TIERS.map(tier => {
+      const tf = getTF(tier.id);
+      const isHL = (isDragging && hoveredTier === tier.id) || (selectedId && selectedFlavor?.tier !== tier.id && !isDragging);
+      const isActive = isDragging && hoveredTier === tier.id;
+      return (
+        <div key={tier.id}
+          ref={el => tierRefs.current[tier.id] = el}
+          className={`tier-row${isActive?" highlight":""}`}
+          style={{"--tc":tier.color+"66","--tg":tier.glow}}
+          onClick={e=>{e.stopPropagation();onTierClick(tier.id);}}
+        >
+          <div className="tier-label"
+            style={{
+              background: isActive
+                ? `linear-gradient(180deg,${tier.color}30,${tier.color}18)`
+                : `linear-gradient(180deg,${tier.color}18,${tier.color}08)`,
+              borderRight:`2px solid ${tier.color}30`,
+            }}>
+            <span className="tier-letter" style={{color:tier.color, textShadow:`0 0 20px ${tier.glow}`}}>{tier.label}</span>
+            <span className="tier-desc" style={{color:tier.color+"88"}}>{tier.desc}</span>
+          </div>
+          <div className="tier-cards" style={{
+            background: isActive
+              ? `linear-gradient(90deg,${tier.color}12,${tier.color}06)`
+              : `linear-gradient(90deg,${tier.color}06,transparent)`,
+          }}>
+            {tf.length===0 && <span className="tier-empty">
+              {isDragging ? `Drop in ${tier.label}` : selectedId ? `Click to place in ${tier.label}` : ""}
+            </span>}
+            {tf.map(f=><Card key={f.id} f={f} dashed={false}/>)}
+          </div>
+        </div>
+      );
+    })}
+
+    {/* Unranked */}
+    {(() => {
+      const isActive = isDragging && hoveredTier === UID;
+      return (
+        <div
+          ref={el => tierRefs.current[UID] = el}
+          className={`unranked-section${isActive?" highlight":""}`}
+          onClick={e=>{e.stopPropagation();onTierClick(UID);}}
+        >
+          <div className="unranked-header">
+            <span style={{fontSize:18}}>{"\u{1F4CB}"}</span>
+            <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,color:"#555",letterSpacing:3}}>TO TRY</span>
+            <span style={{fontSize:10,color:"#333",fontFamily:"monospace",background:"#151518",padding:"2px 8px",borderRadius:6}}>{getTF(UID).length}</span>
+          </div>
+          <div className="unranked-body">
+            {getTF(UID).length===0 && <span className="tier-empty">all ranked — nice {"\u{1F389}"}</span>}
+            {getTF(UID).map(f=><Card key={f.id} f={f} dashed={true}/>)}
+          </div>
+        </div>
+      );
+    })()}
+    </>) : (
+      <div className="grid-view">
+        {brands.filter(b=>filterBrand==="All"||b===filterBrand).map(brand => {
+          const bs = gbs(brand);
+          const bf = flavors.filter(f=>f.brand===brand);
+          return (
+            <div key={brand} className="brand-group" style={{border:`1px solid ${bs.accent}22`,background:"#0a0a0e"}}>
+              <div className="brand-group-header" style={{background:bs.bg,borderBottom:`1px solid ${bs.accent}22`}}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:bs.accent,boxShadow:`0 0 10px ${bs.accent}`}}/>
+                <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,color:bs.accent,letterSpacing:2}}>{brand}</span>
+                <span style={{fontSize:10,color:"#444",fontFamily:"monospace"}}>{bf.length} flavors</span>
+              </div>
+              <div className="brand-group-body">
+                {bf.map(f => {
+                  const t = TIERS.find(x=>x.id===f.tier);
+                  return (
+                    <div key={f.id} className="grid-card"
+                      onClick={e=>{e.stopPropagation();setCtxMenu({id:f.id,x:e.clientX,y:e.clientY});}}
+                      onContextMenu={e=>{e.preventDefault();e.stopPropagation();setCtxMenu({id:f.id,x:e.clientX,y:e.clientY});}}>
+                      <div style={{fontSize:13,color:"#ddd",fontWeight:600,marginBottom:4}}>{f.flavor}</div>
+                      <div style={{fontSize:10,fontFamily:"monospace",color:t?t.color:"#555",display:"flex",alignItems:"center",gap:4}}>
+                        {t ? <><span>{t.emoji}</span><span>{t.label} Tier</span></> : <span>Unranked</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    {/* Right-click context menu */}
+    {ctxMenu && (() => {
+      const f = flavors.find(x=>x.id===ctxMenu.id);
+      if (!f) return null;
+      return (
+        <div className="ctx-menu" style={{left:ctxMenu.x,top:ctxMenu.y}} onClick={e=>e.stopPropagation()}>
+          <div className="ctx-label">Move to tier</div>
+          {TIERS.map(t=>(
+            <button key={t.id} onClick={()=>move(f.id,t.id)}
+              className={f.tier===t.id?"current":""}
+              style={{color:t.color,...(f.tier===t.id?{"--cur-bg":t.color+"15","--cur-border":t.color+"33"}:{})}}>
+              <span>{t.emoji}</span><span>{t.label} — {t.desc}</span>
+            </button>
+          ))}
+          <button onClick={()=>move(f.id,UID)} style={{color:"#666"}}><span>{"\u{1F4CB}"}</span><span>Unranked</span></button>
+          <div className="sep"/>
+          <button className="delete-btn" onClick={()=>remove(f.id)}><span>{"\u{1F5D1}\uFE0F"}</span><span>Delete</span></button>
+        </div>
+      );
+    })()}
+
+    <div className="footer">
+      <p className="f1">DRAG cards between tiers &middot; CLICK to select + place &middot; RIGHT-CLICK for menu</p>
+      <p className="f2">OCB Contest Prep &middot; @_forbiddenknowledge</p>
+    </div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+</script>
+</body>
+</html>
