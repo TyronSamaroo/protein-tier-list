@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Protein Tier List — Tyron's OCB Prep</title>
+<title>Protein Tier List</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -148,6 +148,33 @@
   .brand-group-body { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
   .grid-card { background: #111116; border: 1px solid #1e1e24; border-radius: 10px; padding: 8px 12px; cursor: pointer; position: relative; transition: all 0.2s; }
   .grid-card:hover { border-color: #2a2a33; transform: translateY(-1px); }
+
+  /* Profile Switcher */
+  .profile-bar { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  .profile-btn { background: #111114; border: 1px solid #222228; color: #666; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; outline: none; display: flex; align-items: center; gap: 6px; position: relative; }
+  .profile-btn:hover { border-color: #333; color: #aaa; }
+  .profile-btn.active { background: linear-gradient(135deg, #ff2d55, #ff4466); border-color: #ff2d55; color: #fff; box-shadow: 0 4px 16px rgba(255,45,85,0.3); font-weight: 700; }
+  .profile-btn .star { color: #ffcc00; font-size: 10px; }
+  .profile-btn .del-x { font-size: 10px; color: #555; margin-left: 2px; opacity: 0; transition: opacity 0.2s; }
+  .profile-btn:hover .del-x { opacity: 1; }
+  .profile-btn.active .del-x { color: #ffcccc; }
+  .new-profile-btn { background: transparent; border: 1px dashed #333; color: #444; padding: 6px 14px; border-radius: 10px; font-size: 11px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; }
+  .new-profile-btn:hover { border-color: #555; color: #777; }
+  .profile-create-form { animation: fadeIn 0.2s ease; margin-bottom: 20px; }
+  .profile-create-form .start-opts { display: flex; gap: 8px; margin-top: 10px; }
+  .profile-create-form .start-opt { flex: 1; background: #0a0a0e; border: 1px solid #222228; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .profile-create-form .start-opt:hover { border-color: #444; }
+  .profile-create-form .start-opt.chosen { border-color: #ff2d55; background: #ff2d5510; }
+  .profile-create-form .start-opt .opt-title { font-size: 12px; font-weight: 700; color: #ccc; margin-bottom: 4px; }
+  .profile-create-form .start-opt .opt-desc { font-size: 10px; color: #555; }
+
+  /* Import banner */
+  .import-banner { background: linear-gradient(135deg, #0e0e14, #131318); border: 1px solid #ff950044; border-radius: 14px; padding: 16px; margin-bottom: 20px; text-align: center; animation: fadeIn 0.2s ease; }
+  .import-banner p { font-size: 13px; color: #ccc; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
+  .import-banner .import-actions { display: flex; gap: 8px; justify-content: center; }
+  .import-banner button { padding: 8px 18px; border-radius: 10px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; font-weight: 700; transition: all 0.2s; }
+  .import-accept { background: linear-gradient(135deg, #ff2d55, #ff4466); border: none; color: #fff; box-shadow: 0 4px 16px rgba(255,45,85,0.3); }
+  .import-decline { background: transparent; border: 1px solid #333; color: #777; }
 </style>
 </head>
 <body>
@@ -172,7 +199,7 @@ const TIERS = [
 const UID = "unranked";
 const ALL_TIERS = [...TIERS, {id:UID}];
 
-const DEFAULT = [
+const TYRONS_DEFAULT = [
   { id:"1", brand:"Ryse", flavor:"Skippy Peanut Butter", tier:"s", note:"The GOAT. Nothing comes close." },
   { id:"2", brand:"MuscleSport", flavor:"White Choc Peanut Butter", tier:"s", note:"Dangerously good in oats" },
   { id:"3", brand:"Ryse", flavor:"Cinnamon Toast", tier:"a", note:"" },
@@ -196,6 +223,8 @@ const DEFAULT = [
   { id:"21", brand:"MuscleSport", flavor:"Protella", tier:"d", note:"" },
 ];
 
+const FRESH_START = TYRONS_DEFAULT.map(f => ({...f, tier: UID, note: ""}));
+
 const BC = {
   MuscleSport:{accent:"#e94560",bg:"linear-gradient(135deg,#1a0a12,#1a1a2e)"},
   Ryse:{accent:"#00d4ff",bg:"linear-gradient(135deg,#0a1a1f,#0f0f1a)"},
@@ -205,12 +234,41 @@ const BC = {
   Dymatize:{accent:"#60a5fa",bg:"linear-gradient(135deg,#0a0f1a,#111827)"},
 };
 const gbs = b => BC[b] || {accent:"#888",bg:"linear-gradient(135deg,#161616,#1a1a1a)"};
-const LS_KEY = "protein-tier-list-v4";
+
+// Storage keys
+const OLD_LS_KEY = "protein-tier-list-v4";
+const PROFILES_KEY = "ptl-profiles";
+const ACTIVE_KEY = "ptl-active";
+const dataKey = (name) => `ptl-data-${name}`;
+
+// Migration + init helper
+function initProfiles() {
+  const oldData = localStorage.getItem(OLD_LS_KEY);
+  if (oldData) {
+    // Migrate from old single-key format
+    localStorage.setItem(dataKey("Tyron"), oldData);
+    localStorage.setItem(PROFILES_KEY, JSON.stringify(["Tyron"]));
+    localStorage.setItem(ACTIVE_KEY, "Tyron");
+    localStorage.removeItem(OLD_LS_KEY);
+    return { profiles: ["Tyron"], active: "Tyron", flavors: JSON.parse(oldData) };
+  }
+  const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || '["Tyron"]');
+  const active = localStorage.getItem(ACTIVE_KEY) || "Tyron";
+  let flavors;
+  try {
+    const d = localStorage.getItem(dataKey(active));
+    flavors = d ? JSON.parse(d) : (active === "Tyron" ? TYRONS_DEFAULT : []);
+  } catch { flavors = active === "Tyron" ? TYRONS_DEFAULT : []; }
+  // Ensure Tyron always exists
+  if (!profiles.includes("Tyron")) profiles.unshift("Tyron");
+  return { profiles, active, flavors };
+}
 
 function App() {
-  const [flavors, setFlavors] = useState(() => {
-    try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : DEFAULT; } catch { return DEFAULT; }
-  });
+  const init = useRef(initProfiles()).current;
+  const [profiles, setProfiles] = useState(init.profiles);
+  const [activeProfile, setActiveProfile] = useState(init.active);
+  const [flavors, setFlavors] = useState(init.flavors);
   const [showAdd, setShowAdd] = useState(false);
   const [newBrand, setNewBrand] = useState("");
   const [newFlavor, setNewFlavor] = useState("");
@@ -219,6 +277,10 @@ function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [ctxMenu, setCtxMenu] = useState(null);
   const [view, setView] = useState("tiers");
+  const [showProfileCreate, setShowProfileCreate] = useState(false);
+  const [newProfileName, setNewProfileName] = useState("");
+  const [newProfileStart, setNewProfileStart] = useState("default");
+  const [importData, setImportData] = useState(null); // {name, flavors} pending import
 
   // Drag state (custom pointer-based)
   const [dragId, setDragId] = useState(null);
@@ -228,7 +290,33 @@ function App() {
   const dragStartPos = useRef({x:0,y:0});
   const tierRefs = useRef({});
 
-  useEffect(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(flavors)); } catch {} }, [flavors]);
+  // Persist flavors
+  useEffect(() => { try { localStorage.setItem(dataKey(activeProfile), JSON.stringify(flavors)); } catch {} }, [flavors, activeProfile]);
+
+  // Persist profiles list
+  useEffect(() => { try { localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles)); } catch {} }, [profiles]);
+
+  // Persist active profile
+  useEffect(() => { try { localStorage.setItem(ACTIVE_KEY, activeProfile); } catch {} }, [activeProfile]);
+
+  // Update page title
+  useEffect(() => { document.title = `Protein Tier List — ${activeProfile}'s Rankings`; }, [activeProfile]);
+
+  // Import from URL hash on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#import=")) {
+      try {
+        const encoded = hash.slice(8);
+        const json = decodeURIComponent(escape(atob(encoded)));
+        const data = JSON.parse(json);
+        if (data.name && Array.isArray(data.flavors)) {
+          setImportData(data);
+        }
+      } catch {}
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     if (ctxMenu) { const h = () => setCtxMenu(null); document.addEventListener("click", h); return () => document.removeEventListener("click", h); }
@@ -242,7 +330,6 @@ function App() {
       const cx = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
       const cy = e.clientY ?? e.touches?.[0]?.clientY ?? 0;
 
-      // Only start visual drag after 5px movement
       if (!dragStarted.current) {
         const dx = cx - dragStartPos.current.x;
         const dy = cy - dragStartPos.current.y;
@@ -252,7 +339,6 @@ function App() {
 
       setDragPos({x: cx, y: cy});
 
-      // Hit-test tier rows
       let found = null;
       for (const [tid, el] of Object.entries(tierRefs.current)) {
         if (!el) continue;
@@ -266,7 +352,6 @@ function App() {
 
     const onUp = (e) => {
       if (dragStarted.current && hoveredTier != null) {
-        // Drop!
         setFlavors(p => p.map(f => f.id === dragId ? {...f, tier: hoveredTier} : f));
       }
       setDragId(null);
@@ -284,6 +369,76 @@ function App() {
     };
   }, [dragId, hoveredTier]);
 
+  // Profile functions
+  const switchProfile = (name) => {
+    if (name === activeProfile) return;
+    // Save current first (already handled by useEffect, but force it)
+    localStorage.setItem(dataKey(activeProfile), JSON.stringify(flavors));
+    // Load target
+    let data;
+    try {
+      const d = localStorage.getItem(dataKey(name));
+      data = d ? JSON.parse(d) : (name === "Tyron" ? TYRONS_DEFAULT : []);
+    } catch { data = name === "Tyron" ? TYRONS_DEFAULT : []; }
+    setFlavors(data);
+    setActiveProfile(name);
+    setSelectedId(null);
+    setCtxMenu(null);
+    setFilterBrand("All");
+    setShowAdd(false);
+    setShowProfileCreate(false);
+  };
+
+  const createProfile = () => {
+    const name = newProfileName.trim();
+    if (!name) return;
+    if (profiles.some(p => p.toLowerCase() === name.toLowerCase())) {
+      alert("A profile with that name already exists!");
+      return;
+    }
+    const startData = newProfileStart === "default" ? FRESH_START.map(f => ({...f, id: Date.now() + "_" + f.id})) : [];
+    localStorage.setItem(dataKey(name), JSON.stringify(startData));
+    const newProfiles = [...profiles, name];
+    setProfiles(newProfiles);
+    setNewProfileName("");
+    setShowProfileCreate(false);
+    switchProfile(name);
+  };
+
+  const deleteProfile = (name) => {
+    if (name === "Tyron") return;
+    if (!confirm(`Delete "${name}"'s tier list? This can't be undone.`)) return;
+    localStorage.removeItem(dataKey(name));
+    const newProfiles = profiles.filter(p => p !== name);
+    setProfiles(newProfiles);
+    if (activeProfile === name) switchProfile("Tyron");
+  };
+
+  const acceptImport = () => {
+    if (!importData) return;
+    let name = importData.name;
+    if (profiles.some(p => p.toLowerCase() === name.toLowerCase())) {
+      name = name + " (imported)";
+    }
+    localStorage.setItem(dataKey(name), JSON.stringify(importData.flavors));
+    const newProfiles = [...profiles, name];
+    setProfiles(newProfiles);
+    setImportData(null);
+    switchProfile(name);
+  };
+
+  const shareList = () => {
+    const data = { name: activeProfile, flavors };
+    const json = JSON.stringify(data);
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    const url = window.location.origin + window.location.pathname + "#import=" + encoded;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => alert("Share link copied to clipboard!"));
+    } else {
+      prompt("Copy this share link:", url);
+    }
+  };
+
   const brands = [...new Set(flavors.map(f=>f.brand))].sort();
   const filtered = filterBrand==="All" ? flavors : flavors.filter(f=>f.brand===filterBrand);
   const getTF = tid => filtered.filter(f=>f.tier===tid);
@@ -296,10 +451,22 @@ function App() {
   const add = () => { if(!newBrand.trim()||!newFlavor.trim()) return; setFlavors(p=>[...p,{id:Date.now()+"",brand:newBrand.trim(),flavor:newFlavor.trim(),tier:newTier,note:""}]); setNewBrand(""); setNewFlavor(""); setNewTier(UID); setShowAdd(false); };
   const remove = id => { setFlavors(p=>p.filter(f=>f.id!==id)); setSelectedId(null); setCtxMenu(null); };
   const move = (id,t) => { setFlavors(p=>p.map(f=>f.id===id?{...f,tier:t}:f)); setSelectedId(null); setCtxMenu(null); };
-  const reset = () => { if(confirm("Reset everything to defaults?")) { setFlavors(DEFAULT); setSelectedId(null); } };
+  const reset = () => {
+    const msg = activeProfile === "Tyron"
+      ? "Reset to Tyron's default rankings?"
+      : `Reset "${activeProfile}"'s list? This will clear all rankings.`;
+    if (confirm(msg)) {
+      if (activeProfile === "Tyron") setFlavors(TYRONS_DEFAULT);
+      else {
+        // Check if they started with defaults or empty
+        const current = flavors.length;
+        setFlavors(current > 0 ? FRESH_START.map(f => ({...f, id: Date.now() + "_" + f.id})) : []);
+      }
+      setSelectedId(null);
+    }
+  };
 
   const onPointerDown = (e, id) => {
-    // Ignore right-click
     if (e.button === 2) return;
     e.preventDefault();
     setCtxMenu(null);
@@ -312,7 +479,6 @@ function App() {
   };
 
   const onCardClick = (e, id) => {
-    // Only handle click if we didn't drag
     if (dragStarted.current) return;
     e.stopPropagation();
     setSelectedId(selectedId === id ? null : id);
@@ -359,6 +525,17 @@ function App() {
   };
 
   return (<div onClick={onBgClick}>
+    {/* Import banner */}
+    {importData && (
+      <div className="import-banner" onClick={e=>e.stopPropagation()}>
+        <p>Import {importData.name}'s tier list? ({importData.flavors.length} flavors)</p>
+        <div className="import-actions">
+          <button className="import-accept" onClick={acceptImport}>Import</button>
+          <button className="import-decline" onClick={()=>setImportData(null)}>No thanks</button>
+        </div>
+      </div>
+    )}
+
     {/* Selection banner */}
     {selectedId && selectedFlavor && !isDragging && (
       <div className="select-banner">
@@ -383,7 +560,7 @@ function App() {
     })()}
 
     <div className="header">
-      <div className="header-sub">Tyron's</div>
+      <div className="header-sub">{activeProfile}'s</div>
       <h1>PROTEIN TIER LIST</h1>
       <div className="stats-row">
         <span>{ranked} ranked</span><span style={{color:"#222"}}>&middot;</span>
@@ -394,6 +571,54 @@ function App() {
       <div className="progress-label">{pct}% ranked</div>
     </div>
 
+    {/* Profile Switcher */}
+    <div className="profile-bar" onClick={e=>e.stopPropagation()}>
+      {profiles.map(p => (
+        <button key={p} className={`profile-btn${p===activeProfile?" active":""}`} onClick={() => switchProfile(p)}>
+          {p === "Tyron" && <span className="star">{"\u2B50"}</span>}
+          <span>{p}</span>
+          {p !== "Tyron" && p === activeProfile && (
+            <span className="del-x" onClick={e=>{e.stopPropagation();deleteProfile(p);}}>{"\u2715"}</span>
+          )}
+        </button>
+      ))}
+      <button className="new-profile-btn" onClick={() => setShowProfileCreate(!showProfileCreate)}>
+        {showProfileCreate ? "\u2715 Cancel" : "+ New List"}
+      </button>
+    </div>
+
+    {/* Profile Create Form */}
+    {showProfileCreate && (
+      <div className="profile-create-form add-form" onClick={e=>e.stopPropagation()}>
+        <input
+          placeholder="Your name"
+          value={newProfileName}
+          onChange={e=>setNewProfileName(e.target.value)}
+          onKeyDown={e=>{if(e.key==="Enter"&&newProfileName.trim())createProfile();}}
+          autoFocus
+        />
+        <div className="start-opts">
+          <div className={`start-opt${newProfileStart==="default"?" chosen":""}`} onClick={()=>setNewProfileStart("default")}>
+            <div className="opt-title">Default Flavors</div>
+            <div className="opt-desc">Start with {TYRONS_DEFAULT.length} popular flavors, all unranked</div>
+          </div>
+          <div className={`start-opt${newProfileStart==="empty"?" chosen":""}`} onClick={()=>setNewProfileStart("empty")}>
+            <div className="opt-title">Empty List</div>
+            <div className="opt-desc">Start fresh, add your own flavors</div>
+          </div>
+        </div>
+        <div style={{marginTop:12,textAlign:"center"}}>
+          <button onClick={createProfile} disabled={!newProfileName.trim()} style={{
+            background:newProfileName.trim()?"linear-gradient(135deg,#ff2d55,#ff4466)":"#1a1a1e",
+            border:"none",color:newProfileName.trim()?"#fff":"#444",padding:"12px 32px",borderRadius:10,
+            cursor:newProfileName.trim()?"pointer":"not-allowed",fontSize:13,fontWeight:800,
+            fontFamily:"'JetBrains Mono',monospace",
+            boxShadow:newProfileName.trim()?"0 4px 16px rgba(255,45,85,0.3)":"none",transition:"all 0.2s",
+          }}>CREATE</button>
+        </div>
+      </div>
+    )}
+
     <div className="controls">
       <select className="ctrl-select" value={filterBrand} onChange={e=>setFilterBrand(e.target.value)}>
         <option value="All">All Brands</option>
@@ -403,7 +628,8 @@ function App() {
         <button className={view==="tiers"?"active":""} onClick={e=>{e.stopPropagation();setView("tiers");}}>Tiers</button>
         <button className={view==="grid"?"active":""} onClick={e=>{e.stopPropagation();setView("grid");}}>Grid</button>
       </div>
-      <button className={`ctrl-btn${showAdd?" active":""}`} onClick={e=>{e.stopPropagation();setShowAdd(!showAdd);}}>{showAdd?"✕ Cancel":"+ Add Flavor"}</button>
+      <button className={`ctrl-btn${showAdd?" active":""}`} onClick={e=>{e.stopPropagation();setShowAdd(!showAdd);}}>{showAdd?"\u2715 Cancel":"+ Add Flavor"}</button>
+      <button className="ctrl-btn" onClick={e=>{e.stopPropagation();shareList();}}>Share</button>
       <button className="ctrl-btn" onClick={e=>{e.stopPropagation();reset();}}>Reset</button>
     </div>
 
@@ -543,7 +769,7 @@ function App() {
 
     <div className="footer">
       <p className="f1">DRAG cards between tiers &middot; CLICK to select + place &middot; RIGHT-CLICK for menu</p>
-      <p className="f2">OCB Contest Prep &middot; @_forbiddenknowledge</p>
+      <p className="f2">@_forbiddenknowledge</p>
     </div>
   </div>);
 }
