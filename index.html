@@ -171,6 +171,24 @@
   .profile-create-form .start-opt .opt-title { font-size: 12px; font-weight: 700; color: #ccc; margin-bottom: 4px; }
   .profile-create-form .start-opt .opt-desc { font-size: 10px; color: #555; }
 
+  /* About modal */
+  .modal-overlay { position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.15s ease; }
+  .about-modal { background: linear-gradient(135deg, #0e0e14, #141420); border: 1px solid #2a2a3a; border-radius: 20px; padding: 28px 28px 24px; max-width: 420px; width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04); }
+  .about-modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 4px; background: linear-gradient(135deg, #ff2d55, #ff9500, #ffcc00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+  .about-modal .about-sub { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #444; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+  .about-modal .about-body { font-size: 13px; color: #888; line-height: 1.7; margin-bottom: 20px; }
+  .about-modal .about-body strong { color: #ccc; font-weight: 600; }
+  .about-modal .about-link { display: block; background: rgba(255,45,85,0.08); border: 1px solid #ff2d5533; border-radius: 12px; padding: 12px 16px; text-align: center; margin-bottom: 20px; text-decoration: none; transition: all 0.2s; }
+  .about-modal .about-link:hover { background: rgba(255,45,85,0.14); border-color: #ff2d5566; }
+  .about-modal .about-link span { display: block; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #ff2d5599; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .about-modal .about-link code { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #ff6680; }
+  .about-modal .about-tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 20px; }
+  .about-modal .at-row { display: flex; align-items: center; gap: 8px; background: #0a0a0e; border-radius: 8px; padding: 6px 10px; }
+  .about-modal .at-label { font-family: 'Bebas Neue', sans-serif; font-size: 18px; line-height: 1; }
+  .about-modal .at-desc { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #555; }
+  .about-modal .about-close { width: 100%; background: #111116; border: 1px solid #222228; color: #777; padding: 10px; border-radius: 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; }
+  .about-modal .about-close:hover { border-color: #333; color: #aaa; }
+
   /* Import banner */
   .import-banner { background: linear-gradient(135deg, #0e0e14, #131318); border: 1px solid #ff950044; border-radius: 14px; padding: 16px; margin-bottom: 20px; text-align: center; animation: fadeIn 0.2s ease; }
   .import-banner p { font-size: 13px; color: #ccc; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; }
@@ -273,6 +291,7 @@ function App() {
   const [activeProfile, setActiveProfile] = useState(init.active);
   const [flavors, setFlavors] = useState(init.flavors);
   const [showAdd, setShowAdd] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [newBrand, setNewBrand] = useState("");
   const [newFlavor, setNewFlavor] = useState("");
   const [newTier, setNewTier] = useState(UID);
@@ -634,6 +653,7 @@ function App() {
       <button className={`ctrl-btn${showAdd?" active":""}`} onClick={e=>{e.stopPropagation();setShowAdd(!showAdd);}}>{showAdd?"\u2715 Cancel":"+ Add Flavor"}</button>
       <button className="ctrl-btn" onClick={e=>{e.stopPropagation();shareList();}}>Share</button>
       <button className="ctrl-btn" onClick={e=>{e.stopPropagation();reset();}}>Reset</button>
+      <button className="ctrl-btn" onClick={e=>{e.stopPropagation();setShowAbout(true);}}>About</button>
     </div>
 
     {showAdd && (
@@ -769,6 +789,35 @@ function App() {
         </div>
       );
     })()}
+
+    {showAbout && (
+      <div className="modal-overlay" onClick={()=>setShowAbout(false)}>
+        <div className="about-modal" onClick={e=>e.stopPropagation()}>
+          <h2>Protein Tier List</h2>
+          <p className="about-sub">the definitive ranking</p>
+          <p className="about-body">
+            Drag-and-drop tier list for rating protein powder flavors across <strong>6 brands</strong>.
+            Rankings live in your browser — share your list via URL or load someone else's.
+            Support for <strong>multiple profiles</strong> so the whole household can settle their debates.
+          </p>
+          <a className="about-link" href="https://tyronsamaroo.github.io/protein-tier-list/" target="_blank" rel="noopener">
+            <span>Live Page</span>
+            <code>tyronsamaroo.github.io/protein-tier-list</code>
+          </a>
+          <div className="about-tiers">
+            {TIERS.map(t=>(
+              <div className="at-row" key={t.id}>
+                <span className="at-label" style={{color:t.color}}>{t.label}</span>
+                <div>
+                  <div className="at-desc" style={{color:t.color+"aa"}}>{t.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="about-close" onClick={()=>setShowAbout(false)}>Close</button>
+        </div>
+      </div>
+    )}
 
     <div className="footer">
       <p className="f1">DRAG cards between tiers &middot; CLICK to select + place &middot; RIGHT-CLICK for menu</p>
